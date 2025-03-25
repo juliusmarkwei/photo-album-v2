@@ -12,9 +12,12 @@ export const AppDataSource = async () => {
         username,
         password,
         database: dbName,
-        synchronize: true,
+        synchronize: false,
         logging: false,
         entities: [Photo],
+        ssl: {
+            rejectUnauthorized: false,
+        },
         migrations: [],
         subscribers: [],
     });
