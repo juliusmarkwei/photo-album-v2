@@ -95,7 +95,7 @@ export const DELETE = async (request: NextRequest) => {
         const photo = await photoRepository.findOneBy({
             url: `https://${BUCKETNAME}.s3.${AWSREGION}.amazonaws.com/${key}`,
         });
-        await photoRepository.remove(photo);
+        if (photo) await photoRepository.remove(photo); // delete the photo from the database if it exists, else only from S3
 
         return NextResponse.json({
             success: true,
