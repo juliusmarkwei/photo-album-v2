@@ -20,9 +20,10 @@ export const GET = async (request: NextRequest) => {
 
         // const photoRepository = await dataSource.getRepository(Photo).find();
         // const imageUrls = photoRepository.map((photo) => ({
-        //     "name": photo.name,
-        //     "category": photo.category,
-        //     "url": photo.url,
+        //     key: photo.url.split("/").pop(),
+        //     name: photo.name,
+        //     category: photo.category,
+        //     url: photo.url,
         // }));
 
         // fetching images from the S3 bucket -- option 2
@@ -92,9 +93,7 @@ export const DELETE = async (request: NextRequest) => {
         const photoRepository = dataSource.getRepository(Photo);
         console.log("Photo key to delete:", key);
         const photo = await photoRepository.findOneBy({
-            url: `https://${BUCKETNAME}.s3.${AWSREGION}.amazonaws.com/${encodeURIComponent(
-                key
-            )}`,
+            url: `https://${BUCKETNAME}.s3.${AWSREGION}.amazonaws.com/${key}`,
         });
         await photoRepository.remove(photo);
 
