@@ -26,7 +26,7 @@ export default function Home() {
             try {
                 const response = await fetch("/api/photos");
                 const data = await response.json();
-                console.log(data);
+                console.log(data.images);
                 setImages(data.images);
             } catch (error) {
                 console.error("Error fetching images:", error);
