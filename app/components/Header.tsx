@@ -19,7 +19,7 @@ const Header: FC<HeaderProps> = ({
         <div className="flex items-center justify-between lg:justify-between w-full ">
             <input
                 type="search"
-                placeholder="Type here to search..."
+                placeholder="Type to search..."
                 onChange={(e) => {
                     setSearchTerm("");
                     setQuery(e.target.value);
