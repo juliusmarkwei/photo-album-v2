@@ -12,7 +12,7 @@ export const AppDataSource = async () => {
         username,
         password,
         database: dbName,
-        synchronize: false,
+        synchronize: true,
         logging: false,
         entities: [Photo],
         ssl: {
@@ -20,5 +20,6 @@ export const AppDataSource = async () => {
         },
         migrations: [],
         subscribers: [],
+        migrationsRun: true,
     });
 };
