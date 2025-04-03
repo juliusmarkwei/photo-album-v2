@@ -30,40 +30,8 @@ jobs:
 
             - name: Tag Docker Image for Public ECR
               run: |
-                  docker tag julius/photo-album-v2:latest public.ecr.aws/j1n7u2e7/julius/photo-album-v2:latest
+                  docker tag julius/photo-album-v2:latest public.ecr.aws/a2e8v5y1/julius/photo-album-v2:latest
 
             - name: Push Docker Image to ECR Public
               run: |
-                  docker push public.ecr.aws/j1n7u2e7/julius/photo-album-v2:latest
-
-            - name: Get latest Task Definition ARN
-              id: get-task-def
-              run: |
-                  TASK_DEF_ARN=$(aws ecs describe-task-definition --task-definition photo-album-td-v2 --query "taskDefinition.taskDefinitionArn" --region ${{ secrets.AWS_REGION }} --output text)
-                  echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-
-            - name: Create appspec.yaml
-              run: |
-                  cat <<EOF > appspec.yaml
-                  version: 0.0
-                  Resources:
-                  - TargetService:
-                      Type: AWS::ECS::Service
-                      Properties:
-                          TaskDefinition: ${{ env.TASK_DEF_ARN }}
-                          LoadBalancerInfo:
-                              ContainerName: photo-album-container-v2
-                              ContainerPort: 3000
-                  EOF
-
-            - name: Upload appspec.yaml to S3
-              run: |
-                  aws s3 cp appspec.yaml s3://photo-album-v2-appspec-bucket/appspec.yaml
-
-            - name: Trigger Blue-Green Deployment
-              run: |
-                  aws deploy create-deployment \
-                  --application-name AppECS-photo-album-cluster-v2-photo-album-service2 \
-                  --deployment-group-name DgpECS-photo-album-cluster-v2-photo-album-service2 \
-                  --revision 'revisionType=S3,s3Location={bucket="photo-album-v2-appspec-bucket",key="appspec.yaml",bundleType="YAML"}' \
-                  --region ${{ secrets.AWS_REGION }}
+                  docker push public.ecr.aws/a2e8v5y1/julius/photo-album-v2:latest
