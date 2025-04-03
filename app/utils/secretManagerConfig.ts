@@ -2,7 +2,7 @@
 import * as AWS from "aws-sdk";
 
 const secretsManager = new AWS.SecretsManager({
-    region: "us-east-1",
+    region: process.env.NEXT_PUBLIC_AWS_REGION!,
 });
 
 const getSecret = async (secretId: string) => {

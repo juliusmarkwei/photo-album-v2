@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import { Photo } from "./entity/Photo";
-import { getDbCredentials } from "../parameterStoreConfig";
+import { getDbCredentials } from "../secretManagerConfig";
 
 export const AppDataSource = async () => {
     const dbCredentials = await getDbCredentials();
