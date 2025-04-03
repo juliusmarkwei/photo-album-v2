@@ -24,6 +24,6 @@ export const getDbCredentials = async () => {
         password,
         host,
         dbName: dbname,
-        port: port || 5432,
+        port: port,
     };
 };
