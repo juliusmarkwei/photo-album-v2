@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: "https",
-                hostname: "julius-photo-album-store.s3.us-east-1.amazonaws.com",
+                hostname:
+                    "julius-photo-album-store1.s3.eu-central-1.amazonaws.com",
                 port: "",
                 pathname: "/**",
             },
