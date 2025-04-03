@@ -4,7 +4,9 @@ import { Photo } from "./entity/Photo";
 import { getDbCredentials } from "../parameterStoreConfig";
 
 export const AppDataSource = async () => {
-    const { username, password, host, dbName, port } = await getDbCredentials();
+    const dbCredentials = await getDbCredentials();
+    const { host, port, username, password, dbName } = dbCredentials;
+
     return new DataSource({
         type: "postgres",
         host,
