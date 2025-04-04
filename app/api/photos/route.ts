@@ -83,7 +83,7 @@ export const DELETE = async (request: NextRequest) => {
         console.log("Decoded key:", decodedKey);
 
         const command = new DeleteObjectCommand({
-            Bucket: "julius-photo-album-store",
+            Bucket: BUCKETNAME,
             Key: decodedKey,
         });
 
