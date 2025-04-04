@@ -3,25 +3,8 @@ import { DataSource } from "typeorm";
 import { Photo } from "./entity/Photo";
 import { getDbCredentials } from "../secretManagerConfig";
 
-const NODE_ENV = process.env.NODE_ENV;
-
 export const AppDataSource = async () => {
-    let dbCredentials;
-
-    if (NODE_ENV === "development") {
-        // Local database credentials
-        dbCredentials = {
-            host: "localhost",
-            port: 5432,
-            username: "postgres",
-            password: "postgres",
-            dbName: "photoalbum",
-        };
-    } else {
-        // Fetch credentials from secret manager for other environments
-        dbCredentials = await getDbCredentials();
-    }
-
+    const dbCredentials = await getDbCredentials();
     const { host, port, username, password, dbName } = dbCredentials;
 
     return new DataSource({
@@ -34,7 +17,9 @@ export const AppDataSource = async () => {
         synchronize: true,
         logging: false,
         entities: [Photo],
-        ssl: NODE_ENV === "development" ? false : { rejectUnauthorized: false },
+        ssl: {
+            rejectUnauthorized: false,
+        },
         migrations: [],
         subscribers: [],
         migrationsRun: true,
