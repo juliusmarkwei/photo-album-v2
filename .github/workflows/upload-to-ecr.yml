@@ -35,3 +35,35 @@ jobs:
             - name: Push Docker Image to ECR Public
               run: |
                   docker push public.ecr.aws/a2e8v5y1/julius/photo-album-v2:latest
+
+            - name: Get latest Task Definition ARN
+              id: get-task-def
+              run: |
+                  TASK_DEF_ARN=$(aws ecs describe-task-definition --task-definition photo-album-v2-td --query "taskDefinition.taskDefinitionArn" --region ${{ secrets.AWS_REGION }} --output text)
+                  echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+            - name: Create appspec.yaml
+              run: |
+                  cat <<EOF > appspec.yaml
+                  version: 0.0
+                  Resources:
+                  - TargetService:
+                      Type: AWS::ECS::Service
+                      Properties:
+                          TaskDefinition: ${{ env.TASK_DEF_ARN }}
+                          LoadBalancerInfo:
+                          ContainerName: photo-album-v2-container
+                          ContainerPort: 3000
+                  EOF
+
+            - name: Upload appspec.yaml to S3
+              run: |
+                  aws s3 cp appspec.yaml s3://photo-album-v2-appspec-bucket1/appspec.yaml
+
+            - name: Trigger Blue-GreenAppECS-photo-album-v2-cluster-photo-album-v2-service Deployment
+              run: |
+                  aws deploy create-deployment \
+                  --application-name AppECS-photo-album-v2-cluster-photo-album-v2-service \
+                  --deployment-group-name DgpECS-photo-album-v2-cluster-photo-album-v2-service \
+                  --revision 'revisionType=S3,s3Location={bucket="photo-album-v2-appspec-bucket1",key="appspec.yaml",bundleType="YAML"}' \
+                  --region ${{ secrets.AWS_REGION }}
