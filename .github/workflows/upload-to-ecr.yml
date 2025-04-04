@@ -47,20 +47,20 @@ jobs:
                   cat <<EOF > appspec.yaml
                   version: 0.0
                   Resources:
-                  - TargetService:
-                      Type: AWS::ECS::Service
-                      Properties:
-                          TaskDefinition: ${{ env.TASK_DEF_ARN }}
-                          LoadBalancerInfo:
-                          ContainerName: photo-album-v2-container
-                          ContainerPort: 3000
+                    - TargetService:
+                        Type: AWS::ECS::Service
+                        Properties:
+                            TaskDefinition: ${{ env.TASK_DEF_ARN }}
+                            LoadBalancerInfo:
+                                ContainerName: photo-album-v2-container
+                                ContainerPort: 3000
                   EOF
 
             - name: Upload appspec.yaml to S3
               run: |
                   aws s3 cp appspec.yaml s3://photo-album-v2-appspec-bucket1/appspec.yaml
 
-            - name: Trigger Blue-GreenAppECS-photo-album-v2-cluster-photo-album-v2-service Deployment
+            - name: Trigger Blue-Green Deployment
               run: |
                   aws deploy create-deployment \
                   --application-name AppECS-photo-album-v2-cluster-photo-album-v2-service \
