@@ -12,8 +12,7 @@ const nextConfig: NextConfig = {
             },
             {
                 protocol: "https",
-                hostname:
-                    "julius-photo-album-store1.s3.eu-central-1.amazonaws.com",
+                hostname: "*.public.blob.vercel-storage.com",
                 port: "",
                 pathname: "/**",
             },
