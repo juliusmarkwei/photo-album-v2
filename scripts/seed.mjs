@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { put, list, del } from "@vercel/blob";
+import sharp from "sharp";
 
 if (!process.env.BLOB_READ_WRITE_TOKEN) {
     try {
@@ -21,8 +22,9 @@ if (!token) {
     process.exit(1);
 }
 
-const CONCURRENCY = 8;
+const CONCURRENCY = Number(process.env.CONC) || 8;
 const PER_TAG = Number(process.argv[2]) || 60; // images to pull per tag combo
+const ONLY = process.env.ONLY ? process.env.ONLY.split(",") : null;
 
 // real anime artwork from Safebooru. characters from trending series (1boy),
 // and `no_humans` scenery/objects for people-free anime backdrops.
@@ -136,16 +138,21 @@ const gather = async (tags, label, want) => {
 const store = async (item, category) => {
     const res = await fetch(item.url);
     if (!res.ok) throw new Error(`fetch ${res.status}`);
-    const blob = await res.blob();
-    if (!blob.type.startsWith("image/") || blob.size < 3000)
-        throw new Error("invalid image");
-    const pathname = `uploads/${category}/${cleanName(item.name, "image")}__${item.hash.slice(0, 10)}.${item.ext}`;
+    const input = Buffer.from(await res.arrayBuffer());
+    if (input.length < 3000) throw new Error("invalid image");
+    // downscale + recompress so the gallery fits the 1GB Blob free tier
+    const out = await sharp(input)
+        .rotate()
+        .resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 78 })
+        .toBuffer();
+    const pathname = `uploads/${category}/${cleanName(item.name, "image")}__${item.hash.slice(0, 10)}.jpg`;
     await withRetry(() =>
-        put(pathname, blob, {
+        put(pathname, out, {
             access: "public",
             addRandomSuffix: false,
             allowOverwrite: true,
-            contentType: blob.type,
+            contentType: "image/jpeg",
             token,
         })
     );
@@ -186,12 +193,13 @@ const pool = async (items, worker) => {
     return { ok, failed };
 };
 
-await wipe();
+if (!process.env.NOWIPE) await wipe();
 
 console.log("Gathering real anime art from Safebooru...");
 const tasks = [];
 const globalSeen = new Set();
 for (const [category, combos] of Object.entries(CATEGORY_TAGS)) {
+    if (ONLY && !ONLY.includes(category)) continue;
     let n = 0;
     for (const [tags, label] of combos) {
         const items = await gather(tags, label, PER_TAG);

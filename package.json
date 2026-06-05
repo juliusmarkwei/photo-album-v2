@@ -16,7 +16,8 @@
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-hot-toast": "^2.5.2",
-        "react-masonry-css": "^1.0.16"
+        "react-masonry-css": "^1.0.16",
+        "sharp": "^0.34.5"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3",
