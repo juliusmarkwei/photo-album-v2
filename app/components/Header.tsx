@@ -15,7 +15,11 @@ const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query }) => {
 
     return (
         <div className="flex items-center justify-between gap-3 w-full py-2">
-            <div className="flex items-center gap-2 w-full max-w-xs sm:max-w-sm rounded-full bg-white/5 px-4 h-11 lg:h-12 ring-1 ring-white/10 focus-within:ring-white/30 transition">
+            <span className="shrink-0 bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-xl lg:text-2xl font-bold tracking-tight text-transparent">
+                Gallery
+            </span>
+
+            <div className="flex items-center gap-2 w-full max-w-[160px] sm:max-w-xs rounded-full bg-white/5 px-4 h-11 lg:h-12 ring-1 ring-white/10 focus-within:ring-white/30 transition">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"

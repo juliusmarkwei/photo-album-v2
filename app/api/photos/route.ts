@@ -4,7 +4,13 @@ import { list, del } from "@vercel/blob";
 
 export const GET = async () => {
     try {
-        const { blobs } = await list();
+        const blobs = [];
+        let cursor: string | undefined;
+        do {
+            const page = await list({ cursor, limit: 1000 });
+            blobs.push(...page.blobs);
+            cursor = page.cursor;
+        } while (cursor);
 
         const images = blobs.map((blob) => {
             const parts = blob.pathname.split("/");

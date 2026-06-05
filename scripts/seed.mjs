@@ -23,47 +23,54 @@ if (!token) {
     process.exit(1);
 }
 
-// varied aspect ratios so the masonry layout visibly staggers
-const SIZES = [
-    [800, 600],
-    [600, 800],
-    [800, 800],
-    [900, 500],
+const TARGET = Number(process.argv[2]) || 1000;
+const CONCURRENCY = 14;
+const CATEGORIES = [
+    "Anime",
+    "Gaming",
+    "Movies",
+    "Music",
+    "Art",
+    "Animals",
+    "Nature",
+    "Food",
+    "Travel",
+    "Space",
+    "Other",
 ];
-const PER_CATEGORY = SIZES.length;
 
-// anime sources (nekos.best, key-free, returns static PNGs)
-const ANIME = { Anime: "waifu", Other: "neko", Art: "kitsune" };
-// fun real-photo keywords (LoremFlickr, key-free, CC images)
-const FUN = {
-    Gaming: "videogame",
-    Movies: "cinema",
-    Music: "concert",
-    Animals: "kitten",
-    Nature: "sunset",
-    Food: "icecream",
-    Travel: "beach",
-    Space: "galaxy",
+// bright, colorful anime art — nekosapi v4, key-free, safe rating
+const gatherUrls = async (target) => {
+    const urls = new Set();
+    let attempts = 0;
+    while (urls.size < target && attempts < target / 50 + 40) {
+        attempts++;
+        try {
+            const res = await fetch(
+                "https://api.nekosapi.com/v4/images/random?limit=100&rating=safe"
+            );
+            if (!res.ok) continue;
+            const arr = await res.json();
+            for (const it of arr) if (it?.url) urls.add(it.url);
+        } catch {
+            // transient — keep trying
+        }
+        if (attempts % 5 === 0) {
+            console.log(`gathering... ${urls.size}/${target}`);
+        }
+    }
+    return [...urls].slice(0, target);
 };
 
-const fetchAnimeUrls = async (endpoint, amount) => {
-    const res = await fetch(
-        `https://nekos.best/api/v2/${endpoint}?amount=${amount}`
-    );
-    if (!res.ok) throw new Error(`nekos.best ${endpoint} -> ${res.status}`);
-    const { results } = await res.json();
-    return results.map((r) => r.url);
-};
-
-const store = async (category, name, source) => {
+const store = async (source, category, index) => {
     const res = await fetch(source);
-    if (!res.ok) throw new Error(`fetch ${source} -> ${res.status}`);
+    if (!res.ok) throw new Error(`fetch -> ${res.status}`);
     const blob = await res.blob();
-    const pathname = `uploads/${category}/${Date.now()}-${name}`;
+    const pathname = `uploads/${category}/${Date.now()}-anime-${index}`;
     await put(pathname, blob, {
         access: "public",
         addRandomSuffix: false,
-        contentType: blob.type || "image/jpeg",
+        contentType: blob.type || "image/webp",
         token,
     });
 };
@@ -72,54 +79,47 @@ const wipe = async () => {
     let cursor;
     const urls = [];
     do {
-        const r = await list({ cursor, token });
+        const r = await list({ cursor, token, limit: 1000 });
         urls.push(...r.blobs.map((b) => b.url));
         cursor = r.cursor;
     } while (cursor);
-    if (urls.length) {
-        await del(urls, { token });
-        console.log(`Cleared ${urls.length} existing blobs.\n`);
+    for (let i = 0; i < urls.length; i += 500) {
+        await del(urls.slice(i, i + 500), { token });
     }
+    if (urls.length) console.log(`Cleared ${urls.length} existing blobs.\n`);
 };
 
-let ok = 0;
-let failed = 0;
+const pool = async (items, worker) => {
+    let idx = 0;
+    let ok = 0;
+    let failed = 0;
+    const run = async () => {
+        while (idx < items.length) {
+            const i = idx++;
+            try {
+                await worker(items[i], i);
+                ok++;
+            } catch (err) {
+                failed++;
+                if (failed <= 10) console.error(`✗ ${err.message}`);
+            }
+            if ((ok + failed) % 50 === 0) {
+                console.log(`uploaded ${ok + failed}/${items.length}`);
+            }
+        }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, run));
+    return { ok, failed };
+};
 
 await wipe();
 
-for (const [category, endpoint] of Object.entries(ANIME)) {
-    let urls = [];
-    try {
-        urls = await fetchAnimeUrls(endpoint, PER_CATEGORY);
-    } catch (err) {
-        console.error(`✗ ${category}: ${err.message}`);
-    }
-    for (let i = 0; i < urls.length; i++) {
-        try {
-            await store(category, `${endpoint}-${i + 1}`, urls[i]);
-            ok++;
-            console.log(`✓ ${category}/${endpoint}-${i + 1}`);
-        } catch (err) {
-            failed++;
-            console.error(`✗ ${category}/${endpoint}-${i + 1}: ${err.message}`);
-        }
-    }
-}
+console.log(`Gathering ${TARGET} anime images...`);
+const urls = await gatherUrls(TARGET);
+console.log(`Got ${urls.length} unique images. Uploading...\n`);
 
-for (const [category, keyword] of Object.entries(FUN)) {
-    for (let i = 0; i < PER_CATEGORY; i++) {
-        const lock = i + 1;
-        const [w, h] = SIZES[i % SIZES.length];
-        const src = `https://loremflickr.com/${w}/${h}/${keyword}?lock=${lock}`;
-        try {
-            await store(category, `${keyword}-${lock}`, src);
-            ok++;
-            console.log(`✓ ${category}/${keyword}-${lock}`);
-        } catch (err) {
-            failed++;
-            console.error(`✗ ${category}/${keyword}-${lock}: ${err.message}`);
-        }
-    }
-}
+const { ok, failed } = await pool(urls, (url, i) =>
+    store(url, CATEGORIES[i % CATEGORIES.length], i)
+);
 
 console.log(`\nDone. Uploaded ${ok}, failed ${failed}.`);
