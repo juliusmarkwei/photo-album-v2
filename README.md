@@ -1,109 +1,114 @@
-# Photo Album App
+# Gallery — Anime Photo Album
 
-The **Photo Album App** allows users to browse through various categories of images and upload their own images to an **AWS S3 bucket**. The app is built with **Next.js** and utilizes **AWS S3** for image storage.
+A full-stack anime image gallery built **entirely on Vercel** — no third-party
+infrastructure. Browse a masonry gallery of anime art, star/favorite images to
+your account, and pull images programmatically through a token-authenticated
+public API.
+
+**Live:** https://photo-album-self.vercel.app · **API docs:** [/docs](https://photo-album-self.vercel.app/docs)
+
+## Tech stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Tailwind CSS 4**, `react-masonry-css`, `react-hot-toast`
+- **Vercel Blob** — image storage
+- **Vercel Postgres (Neon)** via `@vercel/postgres` — accounts, API tokens, favorites
+- **sharp** — image downscaling during seeding
+- Auth: custom email/password (scrypt hashing + signed session cookies, Node `crypto`)
 
 ## Features
 
--   📷 Browse images by categories
--   🔎 Search for images by name
--   ☁️ Upload images to AWS S3
--   📱 Responsive design for different screen sizes
+- Masonry gallery with **infinite scroll** and lazy-loaded images
+- **Click-to-view lightbox** that fits the image
+- **Account-based favorites**, synced across devices (star counts shared globally)
+- **Accounts + API tokens** — sign up, create/list/revoke tokens at `/account`
+- **Public API** — fetch by random / category / name / your favorites / most-popular, and upload via token
+- Upload from the UI; dynamic per-user avatar; category filter + search
 
-## 🚀 Getting Started
+## Local development
 
-### 📌 Prerequisites
+```bash
+pnpm install
 
--   **Node.js** (Latest LTS version recommended)
--   **npm, yarn, pnpm, or bun** (for package management)
--   **AWS Account** with an S3 bucket
+# pull env vars from the linked Vercel project (Blob + Postgres + SESSION_SECRET)
+pnpm dlx vercel link
+pnpm dlx vercel env pull .env.local
 
-### 📥 Installation
-
-Clone the repository and install dependencies:
-
-```sh
-git clone https://github.com/yourusername/photo-album-app.git
-cd photo-album-app
-npm install
+pnpm dev        # http://localhost:3000
 ```
 
-## 🔑 Environment Variables
+### Environment variables
 
-Create a **.env.local** file in the root directory and add your **AWS credentials** and **S3 bucket** details:
+Provided automatically when the Vercel **Blob** and **Postgres** stores are
+connected to the project; pull them with `vercel env pull`.
 
-```sh
-NEXT_PUBLIC_AWS_ACCESS_KEY_ID=your-access-key
-NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY=your-secret-key
-NEXT_PUBLIC_AWS_REGION=your-region
-NEXT_PUBLIC_S3_BUCKET_NAME=your-bucket-name
+| Variable | Source | Purpose |
+|---|---|---|
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob | Image storage read/write |
+| `POSTGRES_URL` / `DATABASE_URL` | Neon Postgres | Accounts, tokens, favorites |
+| `SESSION_SECRET` | set manually | Signs session cookies (`openssl rand -hex 48`) |
+
+Postgres tables (`users`, `api_tokens`, `favorites`) are created automatically
+on first use.
+
+## Seeding images
+
+Real anime artwork is sourced from [Safebooru](https://safebooru.org) (trending
+series for characters + `no_humans` tags for scenery), downscaled to fit the
+1 GB Blob free tier.
+
+```bash
+pnpm seed [perTag]          # full reseed (wipes existing), default 60/tag
+ONLY=Travel,Space pnpm seed # subset of categories
+NOWIPE=1 CONC=4 pnpm seed   # add without wiping, lower concurrency
 ```
 
-## 🔧 Running the Development Server
+## Public API
 
-Start the development server:
+Base URL: `https://photo-album-self.vercel.app`. All `/api/images` requests need
+a token (create one at `/account`) sent as `Authorization: Bearer <token>`.
 
-```sh
-npm run dev
+### `GET /api/images`
+Query params (combine freely):
+
+| Param | Description |
+|---|---|
+| `count` | number to return (1–50, default 1) |
+| `category` | filter by category (e.g. `Anime`) |
+| `name` | substring match on image name |
+| `favorites=true` | the token owner's favorited images |
+| `popular=true` | globally most-favorited first |
+| `random=false` | return in order instead of randomly |
+
+```bash
+curl "https://photo-album-self.vercel.app/api/images?count=3&category=Anime" \
+  -H "Authorization: Bearer glr_your_token_here"
 ```
 
-Then, open [http://localhost:3000](http://localhost:3000) in your browser.
-You can start editing the page by modifying **page.tsx**. The page auto-updates as you edit.
+### `POST /api/images`
+Add an image — JSON remote URL or multipart file upload.
 
-## 📦 Building for Production
-
-```sh
-npm run build
+```bash
+curl -X POST "https://photo-album-self.vercel.app/api/images" \
+  -H "Authorization: Bearer glr_your_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/pic.jpg","name":"My pic","category":"Art"}'
 ```
 
-### 🚀 Starting the Production Server
+### Other endpoints
+- `GET /api/photos` — full collection (no token; used by the gallery)
+- `POST /api/auth/signup` · `/login` · `/logout` · `GET /api/auth/me`
+- `GET/POST/DELETE /api/tokens` — token management (session)
+- `GET/POST/DELETE /api/favorites` — app-side favoriting (session)
 
-```sh
-npm run start
+## Deployment
+
+Connected to Vercel with Git auto-deploy on push to `main`. To deploy manually:
+
+```bash
+pnpm dlx vercel --prod
 ```
 
-## 📁 Project Structure
+## Categories
 
-```
-📂 app/         # Main application components and pages
-📂 api/         # API routes for handling image uploads and fetching images
-📂 components/  # Reusable UI components
-📂 constants/   # Application constants
-📂 utils/       # Utility functions and configurations
-📂 public/      # Static assets
-📂 .github/     # GitHub Actions workflows
-📂 .next/       # Next.js build output
-📄 Dockerfile   # Docker configuration for containerizing the app
-📄 package.json # Project dependencies and scripts
-📄 tsconfig.json # TypeScript configuration
-```
-
-## Shots of The Application
-
-### 1. Landing Page
-
-<img src="./public/Screenshot1.png">
-
-### 2. Filtered Photos by "Anime" category
-
-<img src="./public/Screenshot2.png">
-
-### 3. Uploading A new image to S3
-
-<img src="./public/Screenshot3.png">
-
-## 📚 Learn More
-
-To learn more about **Next.js**, check out the following resources:
-
--   [📖 Next.js Documentation](https://nextjs.org/docs) – Learn about Next.js features and API.
--   [🎓 Learn Next.js](https://nextjs.org/learn) – An interactive Next.js tutorial.
--   [🛠 Next.js GitHub Repository](https://github.com/vercel/next.js) – Your feedback and contributions are welcome!
-
-## ☁️ Deploy on Vercel
-
-The easiest way to deploy your **Next.js** app is with the **Vercel Platform**, built by the creators of **Next.js**.
-Check out the [Next.js deployment documentation](https://vercel.com/docs) for more details.
-
-## 📜 License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
+All · Anime · Gaming · Movies · Music · Art · Animals · Nature · Food · Travel · Space · Other
