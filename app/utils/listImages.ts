@@ -61,18 +61,3 @@ export const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
-
-export const STARS_PATH = "meta/stars.json";
-
-export const readStars = async (): Promise<Record<string, number>> => {
-    try {
-        const { blobs } = await list({ prefix: STARS_PATH, limit: 1 });
-        const blob = blobs.find((b) => b.pathname === STARS_PATH);
-        if (!blob) return {};
-        const res = await fetch(blob.url, { cache: "no-store" });
-        if (!res.ok) return {};
-        return await res.json();
-    } catch {
-        return {};
-    }
-};

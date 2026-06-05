@@ -90,7 +90,11 @@ export default function Docs() {
                             </li>
                             <li>
                                 <code className="text-gray-200">favorites=true</code>{" "}
-                                — return the most-starred images first
+                                — your account&apos;s favorited images
+                            </li>
+                            <li>
+                                <code className="text-gray-200">popular=true</code>{" "}
+                                — globally most-favorited images first
                             </li>
                             <li>
                                 <code className="text-gray-200">random=false</code>{" "}
@@ -104,8 +108,11 @@ curl "https://photo-album-self.vercel.app/api/images?count=3&category=Anime" \\
 # search by name
 curl ".../api/images?name=naruto&count=5" -H "Authorization: Bearer glr_..."
 
-# top favorites
-curl ".../api/images?favorites=true&count=10" -H "Authorization: Bearer glr_..."`}</Block>
+# your favorites (token owner's)
+curl ".../api/images?favorites=true&count=10" -H "Authorization: Bearer glr_..."
+
+# globally most-favorited
+curl ".../api/images?popular=true&count=10" -H "Authorization: Bearer glr_..."`}</Block>
                         <p className="mt-3 mb-2 text-sm text-gray-400">
                             Response
                         </p>

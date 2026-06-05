@@ -40,6 +40,12 @@ export const ensureSchema = () => {
                 created_at TIMESTAMPTZ DEFAULT now(),
                 last_used_at TIMESTAMPTZ
             )`;
+            await sql`CREATE TABLE IF NOT EXISTS favorites (
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                image_key TEXT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT now(),
+                PRIMARY KEY (user_id, image_key)
+            )`;
         })().catch((e) => {
             ready = null;
             throw e;

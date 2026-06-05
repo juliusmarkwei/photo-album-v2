@@ -18,7 +18,7 @@ export default function Favorites() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<DialogImage | null>(null);
 
-    const { stars, starredKeys, toggleStar } = useStars();
+    const { stars, starredKeys, toggleStar, loggedIn } = useStars();
 
     useEffect(() => {
         fetch("/api/photos")
@@ -54,9 +54,41 @@ export default function Favorites() {
             </div>
 
             <div className="px-3 pt-24 lg:px-5">
-                {isLoading ? (
+                {isLoading || loggedIn === null ? (
                     <div className="flex h-[60vh] w-full items-center justify-center">
                         <div className="size-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    </div>
+                ) : loggedIn === false ? (
+                    <div className="flex min-h-[70vh] w-full flex-col items-center justify-center text-center">
+                        <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                className="size-9 text-gray-300"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 19.5a7.5 7.5 0 0 1 15 0v.75H4.5v-.75Z"
+                                />
+                            </svg>
+                        </div>
+                        <h1 className="mb-2 text-2xl font-bold text-white">
+                            Sign in to see your favorites
+                        </h1>
+                        <p className="mb-7 max-w-sm text-sm text-white/50">
+                            Favorites are saved to your account and synced across
+                            your devices.
+                        </p>
+                        <Link
+                            href="/account"
+                            className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-gray-200"
+                        >
+                            Sign in
+                        </Link>
                     </div>
                 ) : favorites.length === 0 ? (
                     <div className="flex min-h-[70vh] w-full flex-col items-center justify-center text-center">

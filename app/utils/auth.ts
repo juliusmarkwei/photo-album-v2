@@ -71,16 +71,17 @@ export const generateToken = () => "glr_" + randomBytes(24).toString("hex");
 export const hashToken = (token: string) =>
     createHash("sha256").update(token).digest("hex");
 
+// returns the owning user's id for a valid Bearer token, else null
 export const authenticateToken = async (
     request: NextRequest
-): Promise<boolean> => {
+): Promise<number | null> => {
     const auth = request.headers.get("authorization") || "";
     const match = auth.match(/^Bearer\s+(.+)$/i);
-    if (!match) return false;
+    if (!match) return null;
     await ensureSchema();
     const tokenHash = hashToken(match[1].trim());
     const { rows } = await sql`
         UPDATE api_tokens SET last_used_at = now()
-        WHERE token_hash = ${tokenHash} RETURNING id`;
-    return rows.length > 0;
+        WHERE token_hash = ${tokenHash} RETURNING user_id`;
+    return rows.length > 0 ? rows[0].user_id : null;
 };

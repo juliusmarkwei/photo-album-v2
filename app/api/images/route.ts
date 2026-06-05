@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import {
     listImages,
-    readStars,
     buildPathname,
     cleanName,
     CORS_HEADERS,
 } from "@/app/utils/listImages";
 import { authenticateToken } from "@/app/utils/auth";
+import { getCounts, getUserFavorites } from "@/app/utils/favorites";
 
 const unauthorized = () =>
     NextResponse.json(
@@ -24,13 +24,16 @@ export const OPTIONS = async () =>
 
 export const GET = async (request: NextRequest) => {
     try {
-        if (!(await authenticateToken(request))) return unauthorized();
+        const userId = await authenticateToken(request);
+        if (!userId) return unauthorized();
 
         const params = request.nextUrl.searchParams;
         const category = params.get("category");
         const name = params.get("name");
-        const favorites = params.get("favorites") === "true";
-        const random = params.get("random") !== "false" && !favorites;
+        const favorites = params.get("favorites") === "true"; // the token owner's favorites
+        const popular = params.get("popular") === "true"; // globally most-favorited
+        const random =
+            params.get("random") !== "false" && !favorites && !popular;
         const count = Math.min(
             Math.max(parseInt(params.get("count") || "1", 10) || 1, 1),
             50
@@ -47,10 +50,13 @@ export const GET = async (request: NextRequest) => {
             images = images.filter((i) => i.name.toLowerCase().includes(q));
         }
 
-        const stars = await readStars();
-        const starOf = (key: string) => stars[key] || 0;
+        const counts = await getCounts();
+        const starOf = (key: string) => counts[key] || 0;
 
         if (favorites) {
+            const mine = new Set(await getUserFavorites(userId));
+            images = images.filter((i) => mine.has(i.key));
+        } else if (popular) {
             images = images
                 .filter((i) => starOf(i.key) > 0)
                 .sort((a, b) => starOf(b.key) - starOf(a.key));
@@ -101,6 +107,7 @@ export const GET = async (request: NextRequest) => {
 export const POST = async (request: NextRequest) => {
     try {
         if (!(await authenticateToken(request))) return unauthorized();
+        // (token valid; uploads aren't tied to a specific user)
 
         const contentType = request.headers.get("content-type") || "";
         let data: Blob;
