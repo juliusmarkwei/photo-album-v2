@@ -1,32 +1,36 @@
-import React, { useState } from "react";
+import React from "react";
 import { PhotoCategories } from "../constants/categories";
 
 interface CategoriesProps {
+    selectedCategory: string;
     setSelectedCategory: (category: string) => void;
 }
 
-const Categories: React.FC<CategoriesProps> = ({ setSelectedCategory }) => {
-    const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-    const imageCategories = Object.values(PhotoCategories);
+const imageCategories = Object.values(PhotoCategories);
 
+const Categories: React.FC<CategoriesProps> = ({
+    selectedCategory,
+    setSelectedCategory,
+}) => {
     return (
-        <section className="flex items-center w-dvw overflow-x-scroll gap-2 my-2 lg:my-4">
-            {imageCategories.map((cat: string, index: number) => (
-                <div
-                    key={index}
-                    tabIndex={0}
-                    onFocus={() => setFocusedIndex(index)}
-                    onBlur={() => setFocusedIndex(null)}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`text-gray-200 text-[16px] lg:text-[20px] px-4 py-1 font-light lg:font-medium rounded-xl cursor-pointer ${
-                        focusedIndex === index
-                            ? "text-white bg-gray-600 font-semibold"
-                            : ""
-                    }`}
-                >
-                    {cat}
-                </div>
-            ))}
+        <section className="flex items-center w-full overflow-x-auto gap-2 py-1">
+            {imageCategories.map((cat) => {
+                const active = selectedCategory === cat;
+                return (
+                    <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`shrink-0 rounded-full px-4 py-1.5 text-sm lg:text-base font-medium transition-colors ${
+                            active
+                                ? "bg-white text-black"
+                                : "bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
+                        }`}
+                    >
+                        {cat}
+                    </button>
+                );
+            })}
         </section>
     );
 };

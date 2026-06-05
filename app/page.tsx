@@ -5,7 +5,6 @@ import Categories from "./components/Categories";
 import UploadFloatingButton from "./components/UploadFloatingButton";
 import Footer from "./components/Footer";
 import DisplayImages from "./components/DisplayImages";
-import Ruler from "./components/Ruler";
 import { useEffect, useState } from "react";
 import { PhotoCategories } from "./constants/categories";
 import { shuffle } from "./utils/shuffelList";
@@ -33,7 +32,6 @@ export default function Home() {
             try {
                 const response = await fetch("/api/photos");
                 const data = await response.json();
-                console.log(data);
                 setImages(data.images);
             } catch (error) {
                 console.error("Error fetching images:", error);
@@ -43,8 +41,6 @@ export default function Home() {
         };
         fetchImages();
     }, []);
-
-    console.log("Selected category is: ", selectedCategory);
 
     // Filter images by category and search term
     useEffect(() => {
@@ -71,19 +67,20 @@ export default function Home() {
     }, [images, selectedCategory, searchTerm]);
 
     return (
-        <div className="relative bg-black items-center justify-items-center h-dvh w-full p-3 pb-20 font-[family-name:var(--font-geist-sans)]">
-            <div className="fixed w-full top-0 left-0 bg-black z-50">
+        <div className="relative min-h-dvh w-full bg-black pb-24 font-[family-name:var(--font-geist-sans)]">
+            <div className="fixed top-0 left-0 z-50 w-full border-b border-white/10 bg-black/80 px-3 backdrop-blur-md lg:px-5">
                 <Header
                     setSearchTerm={setSearchTerm}
                     setQuery={setQuery}
                     query={query}
+                />
+                <Categories
+                    selectedCategory={selectedCategory}
                     setSelectedCategory={setSelectedCategory}
                 />
-                <Ruler />
-                <Categories setSelectedCategory={setSelectedCategory} />
             </div>
 
-            <div className="mt-[140px]">
+            <div className="px-3 pt-[140px] lg:px-5">
                 <DisplayImages
                     filteredImages={filteredImages}
                     isLoading={isLoading}

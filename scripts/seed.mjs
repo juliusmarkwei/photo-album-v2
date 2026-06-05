@@ -23,22 +23,6 @@ if (!token) {
     process.exit(1);
 }
 
-// category (must match app/constants/categories.ts) -> LoremFlickr keyword
-const SEED = {
-    Animals: "animal",
-    Architecture: "architecture",
-    Art: "art",
-    Food: "food",
-    Nature: "nature",
-    Travel: "travel",
-    Cars: "car",
-    Space: "galaxy",
-    Sports: "sport",
-    Technology: "technology",
-    Fashion: "fashion",
-    Music: "music",
-};
-
 // varied aspect ratios so the masonry layout visibly staggers
 const SIZES = [
     [800, 600],
@@ -46,24 +30,42 @@ const SIZES = [
     [800, 800],
     [900, 500],
 ];
-
 const PER_CATEGORY = SIZES.length;
 
-const upload = async (category, keyword, lock) => {
-    const [w, h] = SIZES[(lock - 1) % SIZES.length];
-    const src = `https://loremflickr.com/${w}/${h}/${keyword}?lock=${lock}`;
-    const res = await fetch(src);
-    if (!res.ok) throw new Error(`fetch ${src} -> ${res.status}`);
+// anime sources (nekos.best, key-free, returns static PNGs)
+const ANIME = { Anime: "waifu", Other: "neko", Art: "kitsune" };
+// fun real-photo keywords (LoremFlickr, key-free, CC images)
+const FUN = {
+    Gaming: "videogame",
+    Movies: "cinema",
+    Music: "concert",
+    Animals: "kitten",
+    Nature: "sunset",
+    Food: "icecream",
+    Travel: "beach",
+    Space: "galaxy",
+};
+
+const fetchAnimeUrls = async (endpoint, amount) => {
+    const res = await fetch(
+        `https://nekos.best/api/v2/${endpoint}?amount=${amount}`
+    );
+    if (!res.ok) throw new Error(`nekos.best ${endpoint} -> ${res.status}`);
+    const { results } = await res.json();
+    return results.map((r) => r.url);
+};
+
+const store = async (category, name, source) => {
+    const res = await fetch(source);
+    if (!res.ok) throw new Error(`fetch ${source} -> ${res.status}`);
     const blob = await res.blob();
-    const name = `${keyword}-${lock}`;
     const pathname = `uploads/${category}/${Date.now()}-${name}`;
-    const result = await put(pathname, blob, {
+    await put(pathname, blob, {
         access: "public",
         addRandomSuffix: false,
         contentType: blob.type || "image/jpeg",
         token,
     });
-    return result.url;
 };
 
 const wipe = async () => {
@@ -80,15 +82,37 @@ const wipe = async () => {
     }
 };
 
-await wipe();
-
 let ok = 0;
 let failed = 0;
-for (const [category, keyword] of Object.entries(SEED)) {
+
+await wipe();
+
+for (const [category, endpoint] of Object.entries(ANIME)) {
+    let urls = [];
+    try {
+        urls = await fetchAnimeUrls(endpoint, PER_CATEGORY);
+    } catch (err) {
+        console.error(`✗ ${category}: ${err.message}`);
+    }
+    for (let i = 0; i < urls.length; i++) {
+        try {
+            await store(category, `${endpoint}-${i + 1}`, urls[i]);
+            ok++;
+            console.log(`✓ ${category}/${endpoint}-${i + 1}`);
+        } catch (err) {
+            failed++;
+            console.error(`✗ ${category}/${endpoint}-${i + 1}: ${err.message}`);
+        }
+    }
+}
+
+for (const [category, keyword] of Object.entries(FUN)) {
     for (let i = 0; i < PER_CATEGORY; i++) {
         const lock = i + 1;
+        const [w, h] = SIZES[i % SIZES.length];
+        const src = `https://loremflickr.com/${w}/${h}/${keyword}?lock=${lock}`;
         try {
-            await upload(category, keyword, lock);
+            await store(category, `${keyword}-${lock}`, src);
             ok++;
             console.log(`✓ ${category}/${keyword}-${lock}`);
         } catch (err) {

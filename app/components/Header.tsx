@@ -1,51 +1,28 @@
 import Image from "next/image";
 import React, { FC } from "react";
-import { PhotoCategories } from "../constants/categories";
 
 interface HeaderProps {
     setSearchTerm: (term: string) => void;
     setQuery: (query: string) => void;
     query: string;
-    setSelectedCategory: (category: string) => void;
 }
 
-const Header: FC<HeaderProps> = ({
-    setSearchTerm,
-    setQuery,
-    query,
-    setSelectedCategory,
-}) => {
+const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query }) => {
+    const onChange = (value: string) => {
+        setQuery(value);
+        setSearchTerm(value);
+    };
+
     return (
-        <div className="flex items-center justify-between lg:justify-between w-full ">
-            <input
-                type="search"
-                placeholder="Type to search..."
-                onChange={(e) => {
-                    setSearchTerm("");
-                    setQuery(e.target.value);
-                }}
-                className="h-12 lg:h-14 p-2 text-[22px] text-gray-200 focus:outline-0 w-[70%] overflow-ellipsis"
-            />
-            <button
-                type="button"
-                className={`rounded-2xl w-15 p-2 h-10  ${
-                    query ? "flex" : "opacity-0"
-                } items-center justify-center ${
-                    !query ? "cursor-not-allowed" : "cursor-pointer"
-                } `}
-                onClick={() => {
-                    setSearchTerm(query);
-                    setSelectedCategory(PhotoCategories.All);
-                }}
-                disabled={!query}
-            >
+        <div className="flex items-center justify-between gap-3 w-full py-2">
+            <div className="flex items-center gap-2 w-full max-w-xs sm:max-w-sm rounded-full bg-white/5 px-4 h-11 lg:h-12 ring-1 ring-white/10 focus-within:ring-white/30 transition">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
                     stroke="currentColor"
-                    className="size-6 text-white"
+                    className="size-5 text-gray-400 shrink-0"
                 >
                     <path
                         strokeLinecap="round"
@@ -53,14 +30,51 @@ const Header: FC<HeaderProps> = ({
                         d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
                     />
                 </svg>
-            </button>
-            <Image
-                src="https://i.pinimg.com/736x/43/a2/d3/43a2d3c73edc817e5e518068a0bd0e05.jpg"
-                height={50}
-                width={50}
-                alt="profile"
-                className="rounded-full w-10 h-10 lg:w-14 lg:h-14 cursor-pointer mr-1 mt-1 lg:mr-3 lg:mt-2"
-            />
+                <input
+                    type="search"
+                    placeholder="Search photos..."
+                    value={query}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full bg-transparent text-base lg:text-lg text-gray-100 placeholder:text-gray-500 focus:outline-0"
+                />
+                {query && (
+                    <button
+                        type="button"
+                        aria-label="Clear search"
+                        onClick={() => onChange("")}
+                        className="text-gray-400 hover:text-white shrink-0"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth="2"
+                            stroke="currentColor"
+                            className="size-4"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18 18 6M6 6l12 12"
+                            />
+                        </svg>
+                    </button>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2 lg:gap-3 shrink-0">
+                <span className="hidden sm:block text-right text-sm lg:text-base font-medium leading-tight text-gray-200">
+                    Anime vibes &amp; fun finds{" "}
+                    <span className="text-pink-400">✨</span>
+                </span>
+                <Image
+                    src="https://i.pinimg.com/736x/43/a2/d3/43a2d3c73edc817e5e518068a0bd0e05.jpg"
+                    height={56}
+                    width={56}
+                    alt="profile"
+                    className="rounded-full w-10 h-10 lg:w-12 lg:h-12 cursor-pointer ring-1 ring-white/10"
+                />
+            </div>
         </div>
     );
 };
