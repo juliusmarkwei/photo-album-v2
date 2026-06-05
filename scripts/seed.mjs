@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { put } from "@vercel/blob";
+import { put, list, del } from "@vercel/blob";
 
 if (!process.env.BLOB_READ_WRITE_TOKEN) {
     try {
@@ -39,10 +39,19 @@ const SEED = {
     Music: "music",
 };
 
-const PER_CATEGORY = 4;
+// varied aspect ratios so the masonry layout visibly staggers
+const SIZES = [
+    [800, 600],
+    [600, 800],
+    [800, 800],
+    [900, 500],
+];
+
+const PER_CATEGORY = SIZES.length;
 
 const upload = async (category, keyword, lock) => {
-    const src = `https://loremflickr.com/800/600/${keyword}?lock=${lock}`;
+    const [w, h] = SIZES[(lock - 1) % SIZES.length];
+    const src = `https://loremflickr.com/${w}/${h}/${keyword}?lock=${lock}`;
     const res = await fetch(src);
     if (!res.ok) throw new Error(`fetch ${src} -> ${res.status}`);
     const blob = await res.blob();
@@ -56,6 +65,22 @@ const upload = async (category, keyword, lock) => {
     });
     return result.url;
 };
+
+const wipe = async () => {
+    let cursor;
+    const urls = [];
+    do {
+        const r = await list({ cursor, token });
+        urls.push(...r.blobs.map((b) => b.url));
+        cursor = r.cursor;
+    } while (cursor);
+    if (urls.length) {
+        await del(urls, { token });
+        console.log(`Cleared ${urls.length} existing blobs.\n`);
+    }
+};
+
+await wipe();
 
 let ok = 0;
 let failed = 0;
