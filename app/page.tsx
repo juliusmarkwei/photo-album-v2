@@ -5,9 +5,11 @@ import Categories from "./components/Categories";
 import UploadFloatingButton from "./components/UploadFloatingButton";
 import Footer from "./components/Footer";
 import DisplayImages from "./components/DisplayImages";
+import ImageDialog, { DialogImage } from "./components/ImageDialog";
 import { useEffect, useState } from "react";
 import { PhotoCategories } from "./constants/categories";
 import { shuffle } from "./utils/shuffelList";
+import { useStars } from "./hooks/useStars";
 
 type Image = {
     url: string;
@@ -26,6 +28,9 @@ export default function Home() {
     );
     const [searchTerm, setSearchTerm] = useState("");
     const [query, setQuery] = useState("");
+    const [selectedImage, setSelectedImage] = useState<DialogImage | null>(null);
+
+    const { stars, starredKeys, toggleStar } = useStars();
 
     useEffect(() => {
         const fetchImages = async () => {
@@ -85,10 +90,26 @@ export default function Home() {
                 <DisplayImages
                     filteredImages={filteredImages}
                     isLoading={isLoading}
+                    stars={stars}
+                    starredKeys={starredKeys}
+                    onToggleStar={toggleStar}
+                    onOpenImage={setSelectedImage}
                 />
                 <UploadFloatingButton />
                 <Footer />
             </div>
+
+            <ImageDialog
+                image={selectedImage}
+                starCount={selectedImage ? stars[selectedImage.key] || 0 : 0}
+                starred={
+                    selectedImage ? starredKeys.has(selectedImage.key) : false
+                }
+                onToggleStar={() =>
+                    selectedImage && toggleStar(selectedImage.key)
+                }
+                onClose={() => setSelectedImage(null)}
+            />
         </div>
     );
 }

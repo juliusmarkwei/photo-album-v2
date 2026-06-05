@@ -1,19 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import React, { useEffect, useRef, useState } from "react";
 import Masonry from "react-masonry-css";
 import GalleryImage from "./GalleryImage";
-import Pagination from "./Pagination";
+
+type GalleryItem = {
+    url: string;
+    name: string;
+    category: string;
+    key: string;
+};
 
 interface DisplayImagesProps {
-    filteredImages: {
-        url: string;
-        name: string;
-        category: string;
-        key: string;
-    }[];
+    filteredImages: GalleryItem[];
     isLoading: boolean;
+    stars: Record<string, number>;
+    starredKeys: Set<string>;
+    onToggleStar: (key: string) => void;
+    onOpenImage: (image: GalleryItem) => void;
 }
 
 const breakpointColumnsObj = {
@@ -24,80 +28,41 @@ const breakpointColumnsObj = {
     500: 2,
 };
 
-const pageSize = 48;
+const BATCH = 48;
 
 const DisplayImages: React.FC<DisplayImagesProps> = ({
     filteredImages,
     isLoading,
+    stars,
+    starredKeys,
+    onToggleStar,
+    onOpenImage,
 }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-
-    const totalPages = Math.max(1, Math.ceil(filteredImages.length / pageSize));
+    const [visibleCount, setVisibleCount] = useState(BATCH);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        setCurrentPage(1);
+        setVisibleCount(BATCH);
     }, [filteredImages]);
 
-    const indexOfLastImage = currentPage * pageSize;
-    const indexOfFirstImage = indexOfLastImage - pageSize;
-    const currentImages = filteredImages.slice(
-        indexOfFirstImage,
-        indexOfLastImage
-    );
+    const hasMore = visibleCount < filteredImages.length;
 
-    const deletePhotoRequest = async (imageKey: string) => {
-        try {
-            const encodedKey = encodeURIComponent(imageKey);
-            const response = await fetch(`/api/photos?key=${encodedKey}`, {
-                method: "DELETE",
-            });
-            const data = await response.json();
-            if (data.success) {
-                toast.success("Photo deleted successfully");
-            } else {
-                toast.error("Failed to delete photo");
-            }
-        } catch (error) {
-            console.error("Error deleting photo:", error);
-        }
-    };
-
-    const handleDeletePhotoClick = (imageKey: string) => {
-        toast(
-            (t) => (
-                <div className="lg:w-max rounded-lg bg-white p-4 shadow-lg">
-                    <p className="mb-2 text-[15px] font-light lg:text-[20px]">
-                        Are you sure you want to delete this?
-                    </p>
-                    <div className="mt-2 flex items-center justify-center gap-2">
-                        <button
-                            className="cursor-pointer rounded-3xl bg-red-500 px-2 py-1 text-[12px] font-normal text-white lg:px-3 lg:py-2 lg:text-[20px]"
-                            onClick={async () => {
-                                toast.dismiss(t.id);
-                                const deletingToastId =
-                                    toast.loading("Deleting photo...");
-                                await deletePhotoRequest(imageKey);
-                                toast.dismiss(deletingToastId);
-                                window.location.reload();
-                            }}
-                        >
-                            Yes, Delete
-                        </button>
-                        <button
-                            className="cursor-pointer rounded-3xl bg-gray-300 px-2 py-1 text-[12px] font-normal text-black lg:px-3 lg:py-2 lg:text-[20px]"
-                            onClick={() => toast.dismiss(t.id)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            ),
-            {
-                duration: 5000,
-                style: { background: "transparent", boxShadow: "none", padding: 0 },
-            }
+    useEffect(() => {
+        const node = sentinelRef.current;
+        if (!node || !hasMore) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((c) =>
+                        Math.min(c + BATCH, filteredImages.length)
+                    );
+                }
+            },
+            { rootMargin: "800px" }
         );
-    };
+        observer.observe(node);
+        return () => observer.disconnect();
+    }, [hasMore, visibleCount, filteredImages.length]);
 
     if (isLoading) {
         return (
@@ -118,8 +83,10 @@ const DisplayImages: React.FC<DisplayImagesProps> = ({
         );
     }
 
+    const currentImages = filteredImages.slice(0, visibleCount);
+
     return (
-        <section className="w-full px-1 lg:px-2">
+        <section className="w-full">
             <Masonry
                 breakpointCols={breakpointColumnsObj}
                 className="-ml-3 flex w-auto lg:-ml-4"
@@ -130,17 +97,22 @@ const DisplayImages: React.FC<DisplayImagesProps> = ({
                         key={image.key}
                         url={image.url}
                         name={image.name}
-                        onDelete={() => handleDeletePhotoClick(image.key)}
+                        starCount={stars[image.key] || 0}
+                        starred={starredKeys.has(image.key)}
+                        onToggleStar={() => onToggleStar(image.key)}
+                        onOpen={() => onOpenImage(image)}
                     />
                 ))}
             </Masonry>
 
-            <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPrev={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                onNext={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            />
+            {hasMore && (
+                <div
+                    ref={sentinelRef}
+                    className="flex w-full justify-center py-10"
+                >
+                    <div className="size-7 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                </div>
+            )}
         </section>
     );
 };

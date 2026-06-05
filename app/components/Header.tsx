@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import React, { FC } from "react";
 
 interface HeaderProps {
@@ -73,11 +74,27 @@ const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query, count }) => {
                 )}
             </div>
 
-            <div className="flex items-center gap-2 lg:gap-3 shrink-0">
-                <span className="hidden sm:block text-right text-sm lg:text-base font-medium leading-tight text-gray-200">
-                    Anime vibes &amp; fun finds{" "}
-                    <span className="text-pink-400">✨</span>
-                </span>
+            <div className="flex items-center gap-3 lg:gap-4 shrink-0">
+                <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
+                    <Link
+                        href="/"
+                        className="rounded-full px-3 py-1.5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        Home
+                    </Link>
+                    <Link
+                        href="/favorites"
+                        className="rounded-full px-3 py-1.5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        Favorites
+                    </Link>
+                    <Link
+                        href="/docs"
+                        className="rounded-full px-3 py-1.5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        API
+                    </Link>
+                </nav>
                 <Image
                     src="https://i.pinimg.com/736x/43/a2/d3/43a2d3c73edc817e5e518068a0bd0e05.jpg"
                     height={56}

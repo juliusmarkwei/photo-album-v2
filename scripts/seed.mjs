@@ -24,7 +24,7 @@ if (!token) {
 }
 
 const TARGET = Number(process.argv[2]) || 1000;
-const CONCURRENCY = 14;
+const CONCURRENCY = 12;
 const CATEGORIES = [
     "Anime",
     "Gaming",
@@ -39,34 +39,59 @@ const CATEGORIES = [
     "Other",
 ];
 
-// bright, colorful anime art — nekosapi v4, key-free, safe rating
-const gatherUrls = async (target) => {
+// mixed anime so it isn't all waifus: scenery/action wallpapers (pic.re),
+// male characters (husbando) and a smaller share of female/creature art.
+const NEKOS = [
+    { endpoint: "husbando", want: Math.round(TARGET * 0.22) },
+    { endpoint: "waifu", want: Math.round(TARGET * 0.13) },
+    { endpoint: "neko", want: Math.round(TARGET * 0.08) },
+    { endpoint: "kitsune", want: Math.round(TARGET * 0.07) },
+];
+
+const shuffle = (arr) => {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+};
+
+const gatherNekos = async (endpoint, want) => {
     const urls = new Set();
     let attempts = 0;
-    while (urls.size < target && attempts < target / 50 + 40) {
+    while (urls.size < want && attempts < want / 10 + 30) {
         attempts++;
         try {
             const res = await fetch(
-                "https://api.nekosapi.com/v4/images/random?limit=100&rating=safe"
+                `https://nekos.best/api/v2/${endpoint}?amount=20`
             );
             if (!res.ok) continue;
-            const arr = await res.json();
-            for (const it of arr) if (it?.url) urls.add(it.url);
+            const { results } = await res.json();
+            for (const r of results) if (r?.url) urls.add(r.url);
         } catch {
-            // transient — keep trying
-        }
-        if (attempts % 5 === 0) {
-            console.log(`gathering... ${urls.size}/${target}`);
+            // transient
         }
     }
-    return [...urls].slice(0, target);
+    return [...urls].slice(0, want);
 };
 
-const store = async (source, category, index) => {
-    const res = await fetch(source);
+const fetchBlob = async (task) => {
+    const src = task.type === "url" ? task.url : "https://pic.re/image";
+    const res = await fetch(src);
     if (!res.ok) throw new Error(`fetch -> ${res.status}`);
     const blob = await res.blob();
-    const pathname = `uploads/${category}/${Date.now()}-anime-${index}`;
+    if (!blob.type.startsWith("image/")) throw new Error("not an image");
+    return blob;
+};
+
+const store = async (task, category, index) => {
+    let blob;
+    try {
+        blob = await fetchBlob(task);
+    } catch {
+        blob = await fetchBlob(task); // single retry
+    }
+    const pathname = `uploads/${category}/${Date.now()}-img-${index}`;
     await put(pathname, blob, {
         access: "public",
         addRandomSuffix: false,
@@ -114,12 +139,24 @@ const pool = async (items, worker) => {
 
 await wipe();
 
-console.log(`Gathering ${TARGET} anime images...`);
-const urls = await gatherUrls(TARGET);
-console.log(`Got ${urls.length} unique images. Uploading...\n`);
+console.log("Gathering character art (male + female + creatures)...");
+const tasks = [];
+for (const { endpoint, want } of NEKOS) {
+    const urls = await gatherNekos(endpoint, want);
+    console.log(`  ${endpoint}: ${urls.length}`);
+    for (const url of urls) tasks.push({ type: "url", url });
+}
 
-const { ok, failed } = await pool(urls, (url, i) =>
-    store(url, CATEGORIES[i % CATEGORIES.length], i)
+// fill the rest with varied pic.re anime wallpapers/scenery/action
+const picre = Math.max(0, TARGET - tasks.length);
+for (let i = 0; i < picre; i++) tasks.push({ type: "picre" });
+console.log(`  pic.re wallpapers: ${picre}\n`);
+
+shuffle(tasks);
+console.log(`Uploading ${tasks.length} mixed images...\n`);
+
+const { ok, failed } = await pool(tasks, (task, i) =>
+    store(task, CATEGORIES[i % CATEGORIES.length], i)
 );
 
 console.log(`\nDone. Uploaded ${ok}, failed ${failed}.`);

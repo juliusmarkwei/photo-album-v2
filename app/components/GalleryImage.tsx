@@ -6,15 +6,33 @@ import React, { useState } from "react";
 interface GalleryImageProps {
     url: string;
     name: string;
-    onDelete: () => void;
+    starCount: number;
+    starred: boolean;
+    onToggleStar: () => void;
+    onOpen: () => void;
 }
 
-const GalleryImage: React.FC<GalleryImageProps> = ({ url, name, onDelete }) => {
+const GalleryImage: React.FC<GalleryImageProps> = ({
+    url,
+    name,
+    starCount,
+    starred,
+    onToggleStar,
+    onOpen,
+}) => {
     const [dims, setDims] = useState({ width: 4, height: 3 });
     const [loaded, setLoaded] = useState(false);
 
+    const stop = (fn: () => void) => (e: React.MouseEvent) => {
+        e.stopPropagation();
+        fn();
+    };
+
     return (
-        <div className="relative mb-4 overflow-hidden rounded-2xl bg-neutral-900 ring-1 ring-white/5 group">
+        <div
+            onClick={onOpen}
+            className="relative mb-4 cursor-zoom-in overflow-hidden rounded-2xl bg-neutral-900 ring-1 ring-white/5 group"
+        >
             <Image
                 src={url}
                 alt={name}
@@ -23,10 +41,7 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ url, name, onDelete }) => {
                 sizes="(max-width: 500px) 50vw, (max-width: 768px) 33vw, (max-width: 992px) 25vw, (max-width: 1200px) 20vw, 16vw"
                 onLoad={(e) => {
                     const img = e.currentTarget;
-                    setDims({
-                        width: img.naturalWidth,
-                        height: img.naturalHeight,
-                    });
+                    setDims({ width: img.naturalWidth, height: img.naturalHeight });
                     setLoaded(true);
                 }}
                 className={`w-full h-auto object-cover transition duration-500 ease-out group-hover:scale-[1.04] ${
@@ -43,49 +58,32 @@ const GalleryImage: React.FC<GalleryImageProps> = ({ url, name, onDelete }) => {
                 {name}
             </span>
 
-            <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <button
-                    type="button"
-                    aria-label="Like"
-                    className="flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-pink-500"
+            <button
+                type="button"
+                aria-label="Star"
+                onClick={stop(onToggleStar)}
+                className={`absolute top-3 right-3 flex h-9 items-center gap-1 rounded-full px-2.5 text-sm font-semibold backdrop-blur-sm transition-all duration-300 ${
+                    starred
+                        ? "bg-yellow-400 text-black opacity-100"
+                        : "bg-black/50 text-white opacity-0 hover:bg-yellow-400 hover:text-black group-hover:opacity-100"
+                }`}
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill={starred ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="size-4"
                 >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="size-5"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"
-                        />
-                    </svg>
-                </button>
-                <button
-                    type="button"
-                    aria-label="Delete"
-                    onClick={onDelete}
-                    className="flex size-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-red-500"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        className="size-5"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M6 18 18 6M6 6l12 12"
-                        />
-                    </svg>
-                </button>
-            </div>
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 4.92 5.34.46c.5.04.7.66.32.99l-4.05 3.5 1.21 5.22c.11.49-.42.87-.85.61L12 17.02l-4.63 2.68c-.43.26-.96-.12-.85-.61l1.21-5.22-4.05-3.5a.56.56 0 0 1 .32-.99l5.34-.46 2.12-4.92Z"
+                    />
+                </svg>
+                {starCount}
+            </button>
         </div>
     );
 };
