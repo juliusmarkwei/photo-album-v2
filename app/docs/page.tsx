@@ -49,9 +49,25 @@ export default function Docs() {
                 </h1>
                 <p className="mt-3 text-gray-400">
                     Pull anime &amp; fun images from our collection straight
-                    into your app. All endpoints return JSON and are
-                    CORS-enabled, so you can call them from the browser.
+                    into your app. Endpoints return JSON and are CORS-enabled.
                 </p>
+
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+                    <h2 className="mb-2 text-lg font-semibold text-white">
+                        Authentication
+                    </h2>
+                    <p className="mb-3 text-sm text-gray-400">
+                        Create an account and generate a token on the{" "}
+                        <Link
+                            href="/account"
+                            className="text-pink-400 hover:underline"
+                        >
+                            account page
+                        </Link>
+                        , then send it as a Bearer token on every request.
+                    </p>
+                    <Block>{`Authorization: Bearer glr_your_token_here`}</Block>
+                </div>
 
                 <section className="mt-10 space-y-6">
                     <Endpoint method="GET" path="/api/random">
@@ -62,7 +78,8 @@ export default function Docs() {
                             <code className="mx-1 text-gray-200">category</code>
                             (optional).
                         </p>
-                        <Block>{`curl "https://photo-album-self.vercel.app/api/random?count=3&category=Anime"`}</Block>
+                        <Block>{`curl "https://photo-album-self.vercel.app/api/random?count=3&category=Anime" \\
+  -H "Authorization: Bearer glr_your_token_here"`}</Block>
                         <p className="mt-3 mb-2 text-sm text-gray-400">
                             Response
                         </p>
@@ -100,19 +117,6 @@ const { images } = await res.json();`}</Block>
                     </div>
                 </section>
 
-                <section className="mt-10 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
-                    <h2 className="mb-2 text-lg font-semibold text-amber-300">
-                        Authentication — coming soon
-                    </h2>
-                    <p className="text-sm text-gray-400">
-                        Soon you&apos;ll create an account and generate API
-                        tokens to authenticate your requests via an
-                        <code className="mx-1 text-gray-200">
-                            Authorization: Bearer &lt;token&gt;
-                        </code>
-                        header, and manage those tokens from your dashboard.
-                    </p>
-                </section>
             </div>
         </main>
     );

@@ -23,48 +23,57 @@ if (!token) {
     process.exit(1);
 }
 
-const TARGET = Number(process.argv[2]) || 1000;
-const CONCURRENCY = 12;
-const CATEGORIES = [
-    "Anime",
-    "Gaming",
-    "Movies",
-    "Music",
-    "Art",
-    "Animals",
-    "Nature",
-    "Food",
-    "Travel",
-    "Space",
-    "Other",
+const CONCURRENCY = 10;
+const PER_KEYWORD = Number(process.argv[2]) || 28;
+
+const SIZES = [
+    [800, 600],
+    [600, 800],
+    [800, 800],
+    [900, 500],
 ];
 
-// mixed anime so it isn't all waifus: scenery/action wallpapers (pic.re),
-// male characters (husbando) and a smaller share of female/creature art.
-const NEKOS = [
-    { endpoint: "husbando", want: Math.round(TARGET * 0.22) },
-    { endpoint: "waifu", want: Math.round(TARGET * 0.13) },
-    { endpoint: "neko", want: Math.round(TARGET * 0.08) },
-    { endpoint: "kitsune", want: Math.round(TARGET * 0.07) },
-];
-
-const shuffle = (arr) => {
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
+// trending anime series + cool scenery (no female-pinup APIs), keyed by category
+const CATEGORY_KEYWORDS = {
+    Anime: ["naruto", "onepiece", "demonslayer", "jujutsukaisen"],
+    Gaming: ["cyberpunk", "videogame", "bluelock"],
+    Movies: ["ghibli", "spiritedaway", "animemovie"],
+    Music: ["neon", "synthwave", "concert"],
+    Art: ["animeart", "attackontitan", "chainsawman"],
+    Animals: ["pokemon", "wildlife"],
+    Nature: ["landscape", "mountains"],
+    Food: ["dessert", "ramen"],
+    Travel: ["cityscape", "japan"],
+    Space: ["galaxy", "nebula"],
+    Other: ["onepunchman", "haikyuu", "dragonball"],
 };
 
-const gatherNekos = async (endpoint, want) => {
+// male anime characters mixed into the anime-heavy categories
+const HUSBANDO_INTO = ["Anime", "Art", "Other"];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const withRetry = async (fn, tries = 5) => {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await fn();
+        } catch (err) {
+            const rateLimited =
+                err?.name === "BlobServiceRateLimited" ||
+                /too many requests/i.test(err?.message || "");
+            if (!rateLimited || attempt >= tries) throw err;
+            await sleep(Math.min((err?.retryAfter || 5) * 1000, 65000));
+        }
+    }
+};
+
+const gatherHusbando = async (want) => {
     const urls = new Set();
     let attempts = 0;
-    while (urls.size < want && attempts < want / 10 + 30) {
+    while (urls.size < want && attempts < 40) {
         attempts++;
         try {
-            const res = await fetch(
-                `https://nekos.best/api/v2/${endpoint}?amount=20`
-            );
+            const res = await fetch("https://nekos.best/api/v2/husbando?amount=20");
             if (!res.ok) continue;
             const { results } = await res.json();
             for (const r of results) if (r?.url) urls.add(r.url);
@@ -75,8 +84,7 @@ const gatherNekos = async (endpoint, want) => {
     return [...urls].slice(0, want);
 };
 
-const fetchBlob = async (task) => {
-    const src = task.type === "url" ? task.url : "https://pic.re/image";
+const fetchBlob = async (src) => {
     const res = await fetch(src);
     if (!res.ok) throw new Error(`fetch -> ${res.status}`);
     const blob = await res.blob();
@@ -84,20 +92,23 @@ const fetchBlob = async (task) => {
     return blob;
 };
 
-const store = async (task, category, index) => {
+const store = async (task, index) => {
     let blob;
     try {
-        blob = await fetchBlob(task);
+        blob = await fetchBlob(task.src);
     } catch {
-        blob = await fetchBlob(task); // single retry
+        blob = await fetchBlob(task.src);
     }
-    const pathname = `uploads/${category}/${Date.now()}-img-${index}`;
-    await put(pathname, blob, {
-        access: "public",
-        addRandomSuffix: false,
-        contentType: blob.type || "image/webp",
-        token,
-    });
+    const pathname = `uploads/${task.category}/${Date.now()}-img-${index}`;
+    await withRetry(() =>
+        put(pathname, blob, {
+            access: "public",
+            addRandomSuffix: false,
+            allowOverwrite: true,
+            contentType: blob.type || "image/jpeg",
+            token,
+        })
+    );
 };
 
 const wipe = async () => {
@@ -108,8 +119,9 @@ const wipe = async () => {
         urls.push(...r.blobs.map((b) => b.url));
         cursor = r.cursor;
     } while (cursor);
-    for (let i = 0; i < urls.length; i += 500) {
-        await del(urls.slice(i, i + 500), { token });
+    for (let i = 0; i < urls.length; i += 100) {
+        await withRetry(() => del(urls.slice(i, i + 100), { token }));
+        await sleep(300);
     }
     if (urls.length) console.log(`Cleared ${urls.length} existing blobs.\n`);
 };
@@ -139,24 +151,26 @@ const pool = async (items, worker) => {
 
 await wipe();
 
-console.log("Gathering character art (male + female + creatures)...");
+console.log("Building task list (trending anime + cool scenery)...");
 const tasks = [];
-for (const { endpoint, want } of NEKOS) {
-    const urls = await gatherNekos(endpoint, want);
-    console.log(`  ${endpoint}: ${urls.length}`);
-    for (const url of urls) tasks.push({ type: "url", url });
+for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    for (const keyword of keywords) {
+        for (let lock = 1; lock <= PER_KEYWORD; lock++) {
+            const [w, h] = SIZES[lock % SIZES.length];
+            tasks.push({
+                category,
+                src: `https://loremflickr.com/${w}/${h}/${keyword}?lock=${lock}`,
+            });
+        }
+    }
 }
 
-// fill the rest with varied pic.re anime wallpapers/scenery/action
-const picre = Math.max(0, TARGET - tasks.length);
-for (let i = 0; i < picre; i++) tasks.push({ type: "picre" });
-console.log(`  pic.re wallpapers: ${picre}\n`);
-
-shuffle(tasks);
-console.log(`Uploading ${tasks.length} mixed images...\n`);
-
-const { ok, failed } = await pool(tasks, (task, i) =>
-    store(task, CATEGORIES[i % CATEGORIES.length], i)
+const husbando = await gatherHusbando(180);
+console.log(`  husbando (male anime): ${husbando.length}`);
+husbando.forEach((url, i) =>
+    tasks.push({ category: HUSBANDO_INTO[i % HUSBANDO_INTO.length], src: url })
 );
 
+console.log(`Uploading ${tasks.length} images...\n`);
+const { ok, failed } = await pool(tasks, store);
 console.log(`\nDone. Uploaded ${ok}, failed ${failed}.`);

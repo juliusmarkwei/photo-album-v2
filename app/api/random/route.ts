@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listImages, CORS_HEADERS } from "@/app/utils/listImages";
+import { authenticateToken } from "@/app/utils/auth";
 
 export const OPTIONS = async () =>
     new NextResponse(null, { headers: CORS_HEADERS });
 
 export const GET = async (request: NextRequest) => {
     try {
+        if (!(await authenticateToken(request))) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message:
+                        "Missing or invalid API token. Create one at /account and send it as 'Authorization: Bearer <token>'.",
+                },
+                { status: 401, headers: CORS_HEADERS }
+            );
+        }
+
         const params = request.nextUrl.searchParams;
         const category = params.get("category");
         const count = Math.min(

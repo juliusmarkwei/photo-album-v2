@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import React, { FC } from "react";
+import ProfileAvatar from "./ProfileAvatar";
 
 interface HeaderProps {
     setSearchTerm: (term: string) => void;
@@ -94,14 +94,14 @@ const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query, count }) => {
                     >
                         API
                     </Link>
+                    <Link
+                        href="/account"
+                        className="rounded-full px-3 py-1.5 text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                        Account
+                    </Link>
                 </nav>
-                <Image
-                    src="https://i.pinimg.com/736x/43/a2/d3/43a2d3c73edc817e5e518068a0bd0e05.jpg"
-                    height={56}
-                    width={56}
-                    alt="profile"
-                    className="rounded-full w-10 h-10 lg:w-12 lg:h-12 cursor-pointer ring-1 ring-white/10"
-                />
+                <ProfileAvatar />
             </div>
         </div>
     );
