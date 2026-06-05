@@ -54,24 +54,20 @@ export default function Favorites() {
             </div>
 
             <div className="px-3 pt-24 lg:px-5">
-                <h1 className="mb-1 text-2xl font-bold text-white">
-                    Your favorites
-                </h1>
-                <p className="mb-5 text-sm text-white/50">
-                    {favorites.length} starred{" "}
-                    {favorites.length === 1 ? "photo" : "photos"}
-                </p>
-
-                {!isLoading && favorites.length === 0 ? (
-                    <div className="mx-auto mt-16 flex max-w-md flex-col items-center rounded-3xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
-                        <div className="mb-5 flex size-16 items-center justify-center rounded-full bg-yellow-400/10 ring-1 ring-yellow-400/20">
+                {isLoading ? (
+                    <div className="flex h-[60vh] w-full items-center justify-center">
+                        <div className="size-10 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    </div>
+                ) : favorites.length === 0 ? (
+                    <div className="flex min-h-[70vh] w-full flex-col items-center justify-center text-center">
+                        <div className="mb-5 flex size-20 items-center justify-center rounded-full bg-yellow-400/10 ring-1 ring-yellow-400/20">
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 24 24"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="1.5"
-                                className="size-8 text-yellow-400"
+                                className="size-10 text-yellow-400"
                             >
                                 <path
                                     strokeLinecap="round"
@@ -80,30 +76,38 @@ export default function Favorites() {
                                 />
                             </svg>
                         </div>
-                        <h2 className="mb-2 text-xl font-semibold text-white">
+                        <h1 className="mb-2 text-2xl font-bold text-white">
                             No favorites yet
-                        </h2>
-                        <p className="mb-6 text-sm text-white/50">
-                            Tap the{" "}
-                            <span className="text-yellow-400">★</span> on any
-                            photo to save it here for quick access.
+                        </h1>
+                        <p className="mb-7 max-w-sm text-sm text-white/50">
+                            Tap the <span className="text-yellow-400">★</span> on
+                            any photo to save it here for quick access.
                         </p>
                         <Link
                             href="/"
-                            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-gray-200"
+                            className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-gray-200"
                         >
                             Browse the gallery
                         </Link>
                     </div>
                 ) : (
-                    <DisplayImages
-                        filteredImages={favorites}
-                        isLoading={isLoading}
-                        stars={stars}
-                        starredKeys={starredKeys}
-                        onToggleStar={toggleStar}
-                        onOpenImage={setSelectedImage}
-                    />
+                    <>
+                        <h1 className="mb-1 text-2xl font-bold text-white">
+                            Your favorites
+                        </h1>
+                        <p className="mb-5 text-sm text-white/50">
+                            {favorites.length} starred{" "}
+                            {favorites.length === 1 ? "photo" : "photos"}
+                        </p>
+                        <DisplayImages
+                            filteredImages={favorites}
+                            isLoading={false}
+                            stars={stars}
+                            starredKeys={starredKeys}
+                            onToggleStar={toggleStar}
+                            onOpenImage={setSelectedImage}
+                        />
+                    </>
                 )}
             </div>
 
