@@ -62,14 +62,49 @@ export default function Favorites() {
                     {favorites.length === 1 ? "photo" : "photos"}
                 </p>
 
-                <DisplayImages
-                    filteredImages={favorites}
-                    isLoading={isLoading}
-                    stars={stars}
-                    starredKeys={starredKeys}
-                    onToggleStar={toggleStar}
-                    onOpenImage={setSelectedImage}
-                />
+                {!isLoading && favorites.length === 0 ? (
+                    <div className="mx-auto mt-16 flex max-w-md flex-col items-center rounded-3xl border border-white/10 bg-white/[0.02] px-6 py-14 text-center">
+                        <div className="mb-5 flex size-16 items-center justify-center rounded-full bg-yellow-400/10 ring-1 ring-yellow-400/20">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                className="size-8 text-yellow-400"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 4.92 5.34.46c.5.04.7.66.32.99l-4.05 3.5 1.21 5.22c.11.49-.42.87-.85.61L12 17.02l-4.63 2.68c-.43.26-.96-.12-.85-.61l1.21-5.22-4.05-3.5a.56.56 0 0 1 .32-.99l5.34-.46 2.12-4.92Z"
+                                />
+                            </svg>
+                        </div>
+                        <h2 className="mb-2 text-xl font-semibold text-white">
+                            No favorites yet
+                        </h2>
+                        <p className="mb-6 text-sm text-white/50">
+                            Tap the{" "}
+                            <span className="text-yellow-400">★</span> on any
+                            photo to save it here for quick access.
+                        </p>
+                        <Link
+                            href="/"
+                            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-gray-200"
+                        >
+                            Browse the gallery
+                        </Link>
+                    </div>
+                ) : (
+                    <DisplayImages
+                        filteredImages={favorites}
+                        isLoading={isLoading}
+                        stars={stars}
+                        starredKeys={starredKeys}
+                        onToggleStar={toggleStar}
+                        onOpenImage={setSelectedImage}
+                    />
+                )}
             </div>
 
             <ImageDialog

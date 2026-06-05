@@ -12,6 +12,16 @@ interface GalleryImageProps {
     onOpen: () => void;
 }
 
+// staggered placeholder ratios so the loading state reads as masonry, not a grid
+const PLACEHOLDER_RATIOS = [
+    { width: 3, height: 4 },
+    { width: 4, height: 3 },
+    { width: 1, height: 1 },
+    { width: 2, height: 3 },
+    { width: 4, height: 5 },
+    { width: 3, height: 2 },
+];
+
 const GalleryImage: React.FC<GalleryImageProps> = ({
     url,
     name,
@@ -20,7 +30,10 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
     onToggleStar,
     onOpen,
 }) => {
-    const [dims, setDims] = useState({ width: 4, height: 3 });
+    const seed = [...url].reduce((s, c) => s + c.charCodeAt(0), 0);
+    const [dims, setDims] = useState(
+        PLACEHOLDER_RATIOS[seed % PLACEHOLDER_RATIOS.length]
+    );
     const [loaded, setLoaded] = useState(false);
 
     const stop = (fn: () => void) => (e: React.MouseEvent) => {
@@ -31,7 +44,9 @@ const GalleryImage: React.FC<GalleryImageProps> = ({
     return (
         <div
             onClick={onOpen}
-            className="relative mb-4 cursor-zoom-in overflow-hidden rounded-2xl bg-neutral-900 ring-1 ring-white/5 group"
+            className={`relative mb-4 cursor-zoom-in overflow-hidden rounded-2xl bg-neutral-900 ring-1 ring-white/5 group ${
+                loaded ? "" : "animate-pulse"
+            }`}
         >
             <Image
                 src={url}
