@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
+import { buildPathname } from "@/app/utils/listImages";
 
 export const POST = async (request: NextRequest) => {
     try {
@@ -8,9 +9,14 @@ export const POST = async (request: NextRequest) => {
         const name = formData.get("name") as string;
         const category = formData.get("category") as string;
 
-        const pathname = `uploads/${category || "Other"}/${Date.now()}-${
-            name || file.name
-        }`;
+        const ext = (file.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+        const unique = Date.now().toString(36);
+        const pathname = buildPathname(
+            category || "Other",
+            name || file.name,
+            unique,
+            ext
+        );
 
         await put(pathname, file, {
             access: "public",

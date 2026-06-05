@@ -1,21 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { list, put } from "@vercel/blob";
-import { CORS_HEADERS } from "@/app/utils/listImages";
-
-const STARS_PATH = "meta/stars.json";
-
-const readStars = async (): Promise<Record<string, number>> => {
-    try {
-        const { blobs } = await list({ prefix: STARS_PATH, limit: 1 });
-        const blob = blobs.find((b) => b.pathname === STARS_PATH);
-        if (!blob) return {};
-        const res = await fetch(blob.url, { cache: "no-store" });
-        if (!res.ok) return {};
-        return await res.json();
-    } catch {
-        return {};
-    }
-};
+import { put } from "@vercel/blob";
+import { CORS_HEADERS, STARS_PATH, readStars } from "@/app/utils/listImages";
 
 export const OPTIONS = async () =>
     new NextResponse(null, { headers: CORS_HEADERS });

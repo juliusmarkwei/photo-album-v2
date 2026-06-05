@@ -70,16 +70,42 @@ export default function Docs() {
                 </div>
 
                 <section className="mt-10 space-y-6">
-                    <Endpoint method="GET" path="/api/random">
-                        <p className="mb-3 text-sm text-gray-400">
-                            Returns one or more random images. Query params:
-                            <code className="mx-1 text-gray-200">count</code>
-                            (1–50, default 1) and
-                            <code className="mx-1 text-gray-200">category</code>
-                            (optional).
+                    <Endpoint method="GET" path="/api/images">
+                        <p className="mb-2 text-sm text-gray-400">
+                            Flexible image fetch. Combine any of these query
+                            params:
                         </p>
-                        <Block>{`curl "https://photo-album-self.vercel.app/api/random?count=3&category=Anime" \\
-  -H "Authorization: Bearer glr_your_token_here"`}</Block>
+                        <ul className="mb-3 space-y-1 text-sm text-gray-400">
+                            <li>
+                                <code className="text-gray-200">count</code> —
+                                how many to return (1–50, default 1)
+                            </li>
+                            <li>
+                                <code className="text-gray-200">category</code>{" "}
+                                — filter by category (e.g. Anime)
+                            </li>
+                            <li>
+                                <code className="text-gray-200">name</code> —
+                                filter by image name (substring match)
+                            </li>
+                            <li>
+                                <code className="text-gray-200">favorites=true</code>{" "}
+                                — return the most-starred images first
+                            </li>
+                            <li>
+                                <code className="text-gray-200">random=false</code>{" "}
+                                — return in order instead of randomly
+                            </li>
+                        </ul>
+                        <Block>{`# random anime images
+curl "https://photo-album-self.vercel.app/api/images?count=3&category=Anime" \\
+  -H "Authorization: Bearer glr_your_token_here"
+
+# search by name
+curl ".../api/images?name=naruto&count=5" -H "Authorization: Bearer glr_..."
+
+# top favorites
+curl ".../api/images?favorites=true&count=10" -H "Authorization: Bearer glr_..."`}</Block>
                         <p className="mt-3 mb-2 text-sm text-gray-400">
                             Response
                         </p>
@@ -87,14 +113,26 @@ export default function Docs() {
   "success": true,
   "count": 3,
   "images": [
-    { "url": "https://.../img.webp", "name": "img-12", "category": "Anime" }
+    { "url": "https://.../img.jpg", "name": "Uzumaki Naruto", "category": "Anime", "stars": 4 }
   ]
 }`}</Block>
                     </Endpoint>
 
+                    <Endpoint method="POST" path="/api/images">
+                        <p className="mb-3 text-sm text-gray-400">
+                            Add an image. Send a remote image URL as JSON, or
+                            upload a file as multipart form-data.
+                        </p>
+                        <Block>{`curl -X POST "https://photo-album-self.vercel.app/api/images" \\
+  -H "Authorization: Bearer glr_your_token_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url":"https://example.com/pic.jpg","name":"My pic","category":"Art"}'`}</Block>
+                    </Endpoint>
+
                     <Endpoint method="GET" path="/api/photos">
                         <p className="mb-3 text-sm text-gray-400">
-                            Returns the full collection.
+                            Returns the full collection (used by the gallery; no
+                            token required).
                         </p>
                         <Block>{`const res = await fetch("https://photo-album-self.vercel.app/api/photos");
 const { images } = await res.json();`}</Block>

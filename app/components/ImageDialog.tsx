@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 export interface DialogImage {
     url: string;
@@ -25,8 +25,11 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     onToggleStar,
     onClose,
 }) => {
+    const [dims, setDims] = useState({ w: 4, h: 3 });
+
     useEffect(() => {
         if (!image) return;
+        setDims({ w: 4, h: 3 });
         const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -40,7 +43,7 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
             onClick={onClose}
         >
             <div
-                className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-neutral-950 ring-1 ring-white/10"
+                className="relative flex max-h-[92vh] w-fit max-w-[95vw] flex-col overflow-hidden rounded-2xl bg-neutral-950 ring-1 ring-white/10"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
@@ -65,14 +68,21 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                     </svg>
                 </button>
 
-                <div className="flex min-h-0 flex-1 items-center justify-center bg-black">
+                <div className="flex min-h-0 items-center justify-center bg-black">
                     <Image
                         src={image.url}
                         alt={image.name}
-                        width={1200}
-                        height={900}
-                        sizes="(max-width: 768px) 92vw, 768px"
-                        className="max-h-[70vh] w-auto object-contain"
+                        width={dims.w}
+                        height={dims.h}
+                        onLoad={(e) => {
+                            const img = e.currentTarget;
+                            setDims({
+                                w: img.naturalWidth,
+                                h: img.naturalHeight,
+                            });
+                        }}
+                        sizes="95vw"
+                        className="max-h-[78vh] max-w-[95vw] w-auto h-auto object-contain"
                     />
                 </div>
 
