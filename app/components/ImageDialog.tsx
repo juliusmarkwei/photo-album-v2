@@ -26,10 +26,12 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
     onClose,
 }) => {
     const [dims, setDims] = useState({ w: 4, h: 3 });
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         if (!image) return;
         setDims({ w: 4, h: 3 });
+        setLoaded(false);
         const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -68,21 +70,34 @@ const ImageDialog: React.FC<ImageDialogProps> = ({
                     </svg>
                 </button>
 
-                <div className="flex min-h-0 items-center justify-center bg-black">
+                <div
+                    className={`relative flex items-center justify-center bg-black ${
+                        loaded ? "" : "min-h-[55vh] min-w-[80vw] sm:min-w-[45vw]"
+                    }`}
+                >
+                    {!loaded && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="size-9 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                        </div>
+                    )}
                     <Image
                         src={image.url}
                         alt={image.name}
                         width={dims.w}
                         height={dims.h}
+                        priority
                         onLoad={(e) => {
                             const img = e.currentTarget;
                             setDims({
                                 w: img.naturalWidth,
                                 h: img.naturalHeight,
                             });
+                            setLoaded(true);
                         }}
-                        sizes="95vw"
-                        className="max-h-[78vh] max-w-[95vw] w-auto h-auto object-contain"
+                        sizes="(max-width: 768px) 95vw, 768px"
+                        className={`max-h-[78vh] max-w-[95vw] w-auto h-auto object-contain transition-opacity duration-300 ${
+                            loaded ? "opacity-100" : "opacity-0"
+                        }`}
                     />
                 </div>
 
