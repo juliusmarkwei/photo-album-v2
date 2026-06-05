@@ -5,21 +5,28 @@ interface HeaderProps {
     setSearchTerm: (term: string) => void;
     setQuery: (query: string) => void;
     query: string;
+    count: number;
 }
 
-const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query }) => {
+const Header: FC<HeaderProps> = ({ setSearchTerm, setQuery, query, count }) => {
     const onChange = (value: string) => {
         setQuery(value);
         setSearchTerm(value);
     };
 
     return (
-        <div className="flex items-center justify-between gap-3 w-full py-2">
-            <span className="shrink-0 bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-xl lg:text-2xl font-bold tracking-tight text-transparent">
-                Gallery
-            </span>
+        <div className="flex items-center gap-3 lg:gap-5 w-full py-2">
+            <div className="flex items-center gap-3 shrink-0">
+                <span className="bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-xl lg:text-2xl font-bold tracking-tight text-transparent">
+                    Gallery
+                </span>
+                <span className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-gray-300 ring-1 ring-white/10">
+                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                    {count.toLocaleString()} photos
+                </span>
+            </div>
 
-            <div className="flex items-center gap-2 w-full max-w-[160px] sm:max-w-xs rounded-full bg-white/5 px-4 h-11 lg:h-12 ring-1 ring-white/10 focus-within:ring-white/30 transition">
+            <div className="flex items-center gap-2 flex-1 max-w-xl mx-auto rounded-full bg-white/5 px-4 h-11 lg:h-12 ring-1 ring-white/10 focus-within:ring-white/30 transition">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"

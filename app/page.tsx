@@ -73,6 +73,7 @@ export default function Home() {
                     setSearchTerm={setSearchTerm}
                     setQuery={setQuery}
                     query={query}
+                    count={images.length}
                 />
                 <Categories
                     selectedCategory={selectedCategory}
